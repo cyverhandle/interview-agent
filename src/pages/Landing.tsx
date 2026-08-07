@@ -98,7 +98,7 @@ function ChatMockup() {
                 </p>
                 <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
                   <span className="size-1.5 rounded-full bg-emerald-500" />
-                  Live · Maya Chen · Day 15/31
+                  Live · Emily Chen · Day 10/31
                 </p>
               </div>
             </div>
@@ -248,9 +248,9 @@ export default function Landing() {
             >
               {[
                 ["31", "curriculum days"],
-                ["7", "AI modules"],
+                ["8", "AI modules"],
+                ["20", "candidate profiles"],
                 ["8+", "questions per run"],
-                ["100%", "adaptive"],
               ].map(([num, label]) => (
                 <div key={label} className="flex items-baseline gap-1.5">
                   <span className="text-lg font-semibold text-foreground">
@@ -417,15 +417,16 @@ export default function Landing() {
               <div className="flex h-full flex-col justify-between rounded-xl border border-dashed border-border bg-muted/30 p-5">
                 <div className="flex items-center gap-3">
                   <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                    <Rocket className="size-4.5" />
+                    <Rocket className="size-4" />
                   </div>
                   <p className="text-sm font-medium">
-                    Six synthetic candidate journeys
+                    Twenty real candidate journeys
                   </p>
                 </div>
                 <p className="mt-4 text-sm leading-6 text-muted-foreground">
-                  Different completion rates, retakes, skipped days and learning
-                  signals — so every interview run is a different challenge.
+                  From first-try perfectionists to candidates who skipped entire
+                  modules — different completion rates, retakes and learning
+                  signals make every interview run a fresh challenge.
                 </p>
               </div>
             </motion.div>
@@ -482,8 +483,8 @@ export default function Landing() {
             </span>
           </div>
           <p className="text-xs text-muted-foreground">
-            Synthetic curriculum and candidate data · Built for interview
-            practice
+            Official AI Cohort curriculum & candidate data · Built for
+            interview practice
           </p>
         </div>
       </footer>

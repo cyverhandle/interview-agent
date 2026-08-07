@@ -72,6 +72,36 @@ const schema = defineSchema(
       isQuestion: v.boolean(),
       createdAt: v.number(),
     }).index("by_interview", ["interviewId", "createdAt"]),
+
+    /**
+     * Stateless HTTP-API interview sessions (Technical Specification):
+     * each is keyed by the client-supplied sessionId and holds its own
+     * transcript, so no long-term accounts or history are required.
+     */
+    apiSessions: defineTable({
+      sessionId: v.string(),
+      /** normalized candidate profile snapshot (CandidateProfile shape) */
+      candidate: v.any(),
+      messages: v.array(
+        v.object({
+          role: v.union(v.literal("assistant"), v.literal("user")),
+          content: v.string(),
+          day: v.optional(v.number()),
+          isQuestion: v.boolean(),
+        }),
+      ),
+      /** number of questions the interviewer has asked so far */
+      questionsAsked: v.number(),
+      /** curriculum days covered by questions so far */
+      daysCovered: v.array(v.number()),
+      /** interview engine: "ai" uses the LLM interviewer, "fallback" uses the local deterministic interviewer */
+      engine: v.union(v.literal("ai"), v.literal("fallback")),
+      status: v.union(v.literal("active"), v.literal("completed")),
+      createdAt: v.number(),
+      completedAt: v.optional(v.number()),
+      /** feedback in the API contract shape: { summary, strengths, gaps, next } */
+      feedback: v.optional(v.any()),
+    }).index("by_sessionId", ["sessionId"]),
   },
   {
     schemaValidation: false,

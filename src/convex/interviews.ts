@@ -28,8 +28,8 @@ import { CANDIDATE_BY_ID, type CandidateProfile } from "../lib/candidates";
 import { CURRICULUM, DAY_BY_NUMBER, MODULES, dayTopic } from "../lib/curriculum";
 
 const MODEL = "gpt-4o-mini";
-const MIN_QUESTIONS = 8;
-const MIN_DAYS = 4;
+export const MIN_QUESTIONS = 8;
+export const MIN_DAYS = 4;
 
 interface CandidateSnapshot {
   candidateId: string;
@@ -110,12 +110,12 @@ const getMessagesRef = makeFunctionReference<
 // ---------------------------------------------------------------------------
 
 type ChatRole = "system" | "user" | "assistant";
-interface ChatMessage {
+export interface ChatMessage {
   role: ChatRole;
   content: string;
 }
 
-async function complete(
+export async function complete(
   messages: ChatMessage[],
   opts: { temperature?: number; maxTokens?: number } = {},
 ): Promise<string> {
@@ -136,7 +136,7 @@ async function complete(
 }
 
 /** Extract the machine-readable day tag from the end of an interviewer turn. */
-function extractDayTag(text: string): number | null {
+export function extractDayTag(text: string): number | null {
   const match = text.match(/\{\s*"day"\s*:\s*(\d+)\s*\}/);
   if (match) {
     const d = Number.parseInt(match[1], 10);
@@ -146,7 +146,7 @@ function extractDayTag(text: string): number | null {
 }
 
 /** Remove the machine-readable day tag so the candidate never sees it. */
-function stripDayTag(text: string): string {
+export function stripDayTag(text: string): string {
   return text
     .replace(/\{\s*"day"\s*:\s*(null|\d+)\s*\}\s*$/, "")
     .trim();
@@ -218,7 +218,7 @@ TAGGING (critical)
   - For a follow-up that stays on the same topic: {"day": null}
 - Never write anything after the tag.`;
 
-function buildSystemPrompt(c: CandidateProfile): string {
+export function buildSystemPrompt(c: CandidateProfile): string {
   return [
     INTERVIEWER_RULES,
     "",
@@ -230,7 +230,7 @@ function buildSystemPrompt(c: CandidateProfile): string {
   ].join("\n");
 }
 
-function buildFeedbackSystemPrompt(): string {
+export function buildFeedbackSystemPrompt(): string {
   return `You are a technical hiring manager writing a structured evaluation of a candidate who just completed an AI engineering interview.
 
 Analyze the full transcript and return ONLY a JSON object with exactly this shape (no markdown fences, no commentary):
@@ -260,7 +260,7 @@ Ground every score in evidence from the transcript. Be specific and fair. The ca
 // Shared internals
 // ---------------------------------------------------------------------------
 
-function buildFeedback(text: string): Record<string, unknown> {
+export function buildFeedback(text: string): Record<string, unknown> {
   const fenced = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
   const candidate = fenced ? fenced[1] : text;
   const start = candidate.indexOf("{");
@@ -350,7 +350,7 @@ function fallbackDayQuestion(day: number, variant: number): string {
   return `You covered ${topic} in the cohort. Which objective taught you the most, and can you walk me through it with a concrete example? {"day": ${day}}`;
 }
 
-function fallbackOpening(c: CandidateProfile): string {
+export function fallbackOpening(c: CandidateProfile): string {
   const firstDay = c.completedDays[0] ?? 1;
   const first = c.name.split(" ")[0];
   const skippedNote = c.skippedDays.length
@@ -389,10 +389,27 @@ function fallbackFollowUp(kind: string, index: number): string {
   return pool[index % pool.length];
 }
 
+/** Minimal interview state required by the deterministic engine. */
+export interface EngineInterviewState {
+  daysCovered: number[];
+  completedDays: number[];
+  questionsAsked: number;
+  signals: string[];
+  skippedDays: number[];
+  candidateName: string;
+}
+
+/** Minimal turn shape required by the deterministic engine. */
+export interface EngineTurn {
+  role: "assistant" | "user";
+  day?: number;
+  content: string;
+}
+
 /** Produce the next deterministic interviewer turn given the full context. */
-function fallbackNextTurn(
-  i: InterviewDoc,
-  docs: MessageDoc[],
+export function fallbackNextTurn(
+  i: EngineInterviewState,
+  docs: EngineTurn[],
 ): { message: string; day: number | null } {
   const covered = new Set(i.daysCovered);
   const lastUser = [...docs].reverse().find((d) => d.role === "user")?.content ?? "";
@@ -428,9 +445,9 @@ function fallbackNextTurn(
 }
 
 /** Compute a deterministic feedback report from the transcript. */
-function fallbackFeedback(
-  i: InterviewDoc,
-  docs: MessageDoc[],
+export function fallbackFeedback(
+  i: EngineInterviewState,
+  docs: EngineTurn[],
   questionsAsked: number,
   daysCovered: number[],
 ): Record<string, unknown> {

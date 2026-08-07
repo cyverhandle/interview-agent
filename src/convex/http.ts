@@ -7,6 +7,7 @@ import { api } from "./_generated/api";
 // Interview Agent — HTTP API (Technical Specification contract)
 //
 //   GET  /api/health                     → service status
+//   POST /api/interview                  → spec contract: start / turn / done
 //   POST /api/interviews                 → start an interview  { candidateId }
 //   POST /api/interviews/:id/respond     → next turn           { answer }
 //   POST /api/interviews/:id/complete    → structured feedback
@@ -58,12 +59,56 @@ http.route({
       service: "interview-agent",
       version: "1.0.0",
       endpoints: [
+        "POST /api/interview",
         "POST /api/interviews",
         "POST /api/interviews/:id/respond",
         "POST /api/interviews/:id/complete",
         "GET /api/interviews/:id",
       ],
     });
+  }),
+});
+
+// ---------------------------------------------------------------------------
+// Technical Specification endpoint — POST /api/interview
+//
+//   Start:  { sessionId, candidate }        → { reply, done: false }
+//   Turn:   { sessionId, message }          → { reply, done: false }
+//   End:    (coverage complete)             → { reply, done: true, feedback }
+//
+// State is maintained server-side per sessionId. No auth required.
+// ---------------------------------------------------------------------------
+http.route({
+  path: "/api/interview",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    const body = await readJson(request);
+    if (!body || typeof body.sessionId !== "string" || body.sessionId.trim().length === 0) {
+      return error("sessionId is required", 400);
+    }
+    const sessionId = body.sessionId;
+    try {
+      if ("candidate" in body) {
+        const result = await ctx.runAction(api.interviewApi.startApiInterview, {
+          sessionId,
+          candidate: body.candidate,
+        });
+        return json(result, 200);
+      }
+      if (typeof body.message === "string" && body.message.trim().length > 0) {
+        const result = await ctx.runAction(api.interviewApi.respondApiInterview, {
+          sessionId,
+          message: body.message,
+        });
+        return json(result, 200);
+      }
+      return error("Provide 'candidate' to start or 'message' to continue", 400);
+    } catch (e) {
+      return error(
+        e instanceof Error ? e.message : "Interview API error",
+        e instanceof Error && /No interview found/.test(e.message) ? 404 : 500,
+      );
+    }
   }),
 });
 
