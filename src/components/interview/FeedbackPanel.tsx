@@ -1,4 +1,6 @@
-import { Lightbulb, TrendingUp, Trophy } from "lucide-react";
+import { useSpeechSynthesis } from "@/hooks/use-voice";
+import { Lightbulb, Square, TrendingUp, Trophy, Volume2 } from "lucide-react";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { DayChip, VERDICTS, type FeedbackReport } from "./shared";
 
@@ -50,6 +52,19 @@ function ScoreRing({
 
 export function FeedbackPanel({ feedback }: { feedback: FeedbackReport }) {
   const verdict = VERDICTS[feedback.verdict] ?? VERDICTS.lean_hire;
+  const tts = useSpeechSynthesis();
+  const [reading, setReading] = useState(false);
+
+  const listen = () => {
+    if (reading) {
+      tts.stop();
+      setReading(false);
+      return;
+    }
+    const text = `${verdict.label}. Overall score ${feedback.overallScore} out of 100. ${feedback.summary}`;
+    tts.speak(text, () => setReading(false));
+    setReading(true);
+  };
 
   return (
     <div className="h-full overflow-y-auto">
@@ -87,6 +102,26 @@ export function FeedbackPanel({ feedback }: { feedback: FeedbackReport }) {
                   </span>
                 ))}
               </div>
+              <button
+                type="button"
+                onClick={listen}
+                disabled={!tts.supported}
+                className="mt-5 inline-flex items-center gap-2 rounded-full border border-border/70 bg-card px-4 py-2 text-xs font-medium text-muted-foreground shadow-sm transition-all hover:border-ring/40 hover:text-foreground active:scale-95 disabled:pointer-events-none disabled:opacity-50"
+              >
+                {reading ? (
+                  <>
+                    <Square className="size-3.5 fill-current text-primary" />
+                    Stop reading
+                  </>
+                ) : (
+                  <>
+                    <Volume2
+                      className={cn("size-3.5", tts.speaking && "animate-pulse text-primary")}
+                    />
+                    Listen to summary
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>
